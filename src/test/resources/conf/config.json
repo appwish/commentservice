@@ -1,0 +1,5 @@
+{
+  "env": "dev",
+  "appPort": 8281,
+  "appHost": "localhost"
+}
