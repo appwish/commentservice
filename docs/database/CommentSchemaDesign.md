@@ -26,24 +26,13 @@ comments has replays and they have some replays.
 
 using the following blow approach, lets try to achieve this
 
-### 1. Service Types:
+### 1. Item types:
 
-Currently our platform supports multiple services. We will be maintaining 
-an metadata table to identify each services by their own id. This helps us
-to put service type code in the comments table, that it can support
-for multiple types.
+Currently our platform supports multiple services and each services can have multiple items. 
+We will be maintaining an items Enumerated type in our database to identify each service items. 
+This helps us to put service item type enum in the comments table.
 
-- id - Unique identifier for Service Type.
-- serviceType - Name give to service. E.x: wish, feed, comment
-- createdAt - Timestamp creation
-- updatedAt - Timestamp latest update
-
-Example:
-
-id | serviceType | createdAt | updatedAt
---- | ------ | ---- | ----
-1 | wish | "2020-01-18" | "2020-01-18"
-1 | feed | "2020-01-18" | "2020-01-18"
+`CREATE TYPE comments."ItemType" AS ENUM ('wish');`
 
 ### 2. Comments Tables:
 
@@ -62,20 +51,20 @@ entry. Let make blank entry and parentID as NULL. And userID will be defaulted t
 - message - comment that has been posted
 - parentID - Hold the parent of the comments, indicator of reply. [FKey]
 [ If this value is NULL, that is the starting of the message. ]
-- serviceTypeID - Id of the Service Type
-- typeID - Actual ID of the Service entry in their corresponding DB.
+- itemType - Service Types
+- itemID - Actual ID of the Service entry in their corresponding DB.
 - createdAt - Timestamp of comment creation
 - updatedAt - Timestamp of comment latest update
 
-id  | userID | message | parentID | serviceTypeID | typeID | createdAt | updatedAt
+id  | userID | message | parentID | itemType | itemID | createdAt | updatedAt
 --- | ------ | ---- | ---- | ---- | ---- | ---- | ----
-1  | 0 | blank | NULL | 1 | 1 | "2020-01-18" |	"2020-01-18"
-3  | 1 | "My First comment" | 1 | 1 | 1 | "2020-01-18" |	"2020-01-18" 
-4  | 1 | "My Second comment" | 1 | 1 | 1 | "2020-01-18" | "2020-01-18"
-6  | 2 | "My First comment - Reply" | 3	| 1 | 1 | "2020-01-18" | "2020-01-18"
-7  | 3 | "My First comment - Reply - user3" | 3 | 1 | 1 | "2020-01-18" | "2020-01-18"
-8  | 2 | "MFC - Reply - user3 - Reply - u2" | 7 | 1 | 1 | "2020-01-18" | "2020-01-18"
-9  | 4 | "MFC - Reply - u4" | 6 | 1 | 1 | "2020-01-18" | "2020-01-18"
+1  | 0 | blank | NULL | "wish" | 1 | "2020-01-18" |	"2020-01-18"
+3  | 1 | "My First comment" | 1 | "wish" | 1 | "2020-01-18" |	"2020-01-18" 
+4  | 1 | "My Second comment" | 1 | "wish" | 1 | "2020-01-18" | "2020-01-18"
+6  | 2 | "My First comment - Reply" | 3	| "wish" | 1 | "2020-01-18" | "2020-01-18"
+7  | 3 | "My First comment - Reply - user3" | 3 | "wish" | 1 | "2020-01-18" | "2020-01-18"
+8  | 2 | "MFC - Reply - user3 - Reply - u2" | 7 | "wish" | 1 | "2020-01-18" | "2020-01-18"
+9  | 4 | "MFC - Reply - u4" | 6 | "wish" | 1 | "2020-01-18" | "2020-01-18"
 
 With this design, every top level comments can be identified by their parentID which will 
 be `NULL`. If comments has a parentID column associated with a integer value, 

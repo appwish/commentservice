@@ -1,14 +1,11 @@
--- Service Type
-insert into comments.appwish_service_type (id, "serviceType") values (1, 'wish');
-
 -- Comments sample
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (1, 0, 'blank', NULL, 1, 1);
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (2, 1, 'comment 2', 1, 1, 1);
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (3, 1, 'comment 3', 1, 1, 1);
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (4, 2, 'comment 4', 2, 1, 1);
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (5, 3, 'comment 5', 2, 1, 1);
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (6, 2, 'comment 6', 4, 1, 1);
-insert into comments.comments (id, "userID", message, "parentID", "serviceTypeID", "typeID") values (7, 4, 'comment 7', 5, 1, 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (1, 0, 'blank', NULL, 'wish', 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (2, 1, 'comment 2', 1, 'wish', 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (3, 1, 'comment 3', 1, 'wish', 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (4, 2, 'comment 4', 2, 'wish', 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (5, 3, 'comment 5', 2, 'wish', 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (6, 2, 'comment 6', 4, 'wish', 1);
+insert into comments.comments (id, "userID", message, "parentID", "itemType", "itemID") values (7, 4, 'comment 7', 5, 'wish', 1);
 
 -- Comments Hierarchy
 -- Making all the comments as its parent
@@ -62,4 +59,4 @@ WHERE p."childID" = 5 AND c."parentID" = 7;
 SELECT c."userID", c.message, c."parentID" as pd, m."childID", m.depth
 FROM comments.comments_hierarchy m JOIN comments.comments c
 ON (m."childID" = c.id)
-WHERE m."parentID" = 1 and c."typeID"=1 ORDER BY pd ASC, m."childID" ASC;
+WHERE m."parentID" = 1 and c."itemID"=1 ORDER BY pd ASC, m."childID" ASC;
