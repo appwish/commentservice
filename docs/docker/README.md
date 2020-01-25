@@ -42,14 +42,15 @@ The build the image the following process has to be followed.
 
     Open the command prompt, based on the operating system
     
-    
-    -- Login to the current working directory
-    -- You will prompted for username and password.
-    -- provide the details created in step 1
+    ```sh
+    ## Login to the current working directory
+    ## You will prompted for username and password.
+    ## provide the details created in step 1
     docker login
     
-    -- Once logged in. Run the following script to build and push the docker image
+    ## Once logged in. Run the following script to build and push the docker image
     ./docker-build.sh
+   ```
 
 
 ## Running Comment Service in Local
