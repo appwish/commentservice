@@ -1,5 +1,0 @@
-{
-  "env": "dev",
-  "appPort": 8080,
-  "appHost": "commentservice"
-}
