@@ -1,5 +1,10 @@
 {
   "env": "dev",
   "appPort": 8281,
-  "appHost": "localhost"
+  "appHost": "localhost",
+  "dbPort": 5432,
+  "dbHost": "localhost",
+  "dbName": "postgres",
+  "dbUser": "postgres",
+  "dbPassword": "postgres"
 }
