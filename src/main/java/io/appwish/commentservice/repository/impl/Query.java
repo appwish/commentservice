@@ -6,15 +6,15 @@ package io.appwish.commentservice.repository.impl;
  * I'm not sure what's the best practice for storing String SQLs, so for now it'll stay here.
  */
 public enum Query {
-  FIND_ALL_COMMENTS_BY_ITEM("SELECT * FROM comments "
-      + "WHERE parent_id=$1 "
-      + "AND parent_type=$2"),
+  FIND_COMMENTS_BY_ITEM("SELECT * FROM comments "
+      + "WHERE item_id=$1 "
+      + "AND item_type=$2"),
   DELETE_COMMENT_QUERY("DELETE FROM comments WHERE id=$1"),
   INSERT_COMMENT_QUERY(
     "INSERT INTO comments ("
       + "user_id, "
-      + "parent_id, "
-      + "parent_type, "
+      + "item_id, "
+      + "item_type, "
       + "content, "
       + "created_at, "
       + "updated_at) "
@@ -24,15 +24,22 @@ public enum Query {
     "UPDATE comments SET "
       + "content=$2 "
       + "WHERE id=$1 RETURNING *"),
+  IS_COMMENT_AUTHOR(
+      "SELECT * FROM comments "
+          + "WHERE id=$1 AND user_id=$2"),
   CREATE_COMMENTS_TABLE(
     "CREATE TABLE IF NOT EXISTS comments("
       + "id serial PRIMARY KEY, "
-      + "user_id serial, "
-      + "parent_id serial, "
-      + "parent_type VARCHAR(255), "
+      + "user_id VARCHAR(55), "
+      + "item_id VARCHAR(55), "
+      + "item_type VARCHAR(255), "
       + "content VARCHAR(255), "
       + "created_at timestamp, "
-      + "updated_at timestamp);");
+      + "updated_at timestamp);"),
+  GET_CHILD_COMMENTS(
+      "SELECT * FROM comments "
+          + "WHERE item_id=$1 "
+          + "AND item_type=$2");
 
   private final String sql;
 

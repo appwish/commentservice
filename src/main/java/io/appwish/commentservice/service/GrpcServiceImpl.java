@@ -1,23 +1,25 @@
 package io.appwish.commentservice.service;
 
 import io.appwish.commentservice.eventbus.Address;
+import io.appwish.commentservice.interceptor.UserContextInterceptor;
 import io.appwish.commentservice.model.Comment;
 import io.appwish.commentservice.model.input.CommentInput;
 import io.appwish.commentservice.model.input.UpdateCommentInput;
-import io.appwish.commentservice.model.query.AllCommentQuery;
 import io.appwish.commentservice.model.query.CommentQuery;
+import io.appwish.commentservice.model.query.CommentSelector;
 import io.appwish.commentservice.model.reply.CommentDeleteReply;
 import io.appwish.commentservice.model.reply.CommentReply;
-import io.appwish.grpc.AllCommentQueryProto;
 import io.appwish.grpc.AllCommentReplyProto;
 import io.appwish.grpc.CommentDeleteReplyProto;
 import io.appwish.grpc.CommentInputProto;
 import io.appwish.grpc.CommentProto;
 import io.appwish.grpc.CommentQueryProto;
 import io.appwish.grpc.CommentReplyProto;
+import io.appwish.grpc.CommentSelectorProto;
 import io.appwish.grpc.CommentServiceGrpc;
 import io.appwish.grpc.UpdateCommentInputProto;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,8 @@ import net.badata.protobuf.converter.Converter;
  * database.
  */
 public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplBase {
+
+  private static final String USER_ID = "userId";
 
   private final EventBus eventBus;
   private final Converter converter;
@@ -42,10 +46,10 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
    * This method gets invoked when other service (app, microservice) invokes stub.getAllComment(...)
    */
   @Override
-  public void getAllComment(final AllCommentQueryProto request, final Promise<AllCommentReplyProto> response) {
+  public void getAllComment(final CommentSelectorProto request, final Promise<AllCommentReplyProto> response) {
 
     eventBus.<List<Comment>>request(
-        Address.FIND_ALL_COMMENTS.get(), converter.toDomain(AllCommentQuery.class, request),
+        Address.FIND_ALL_COMMENTS.get(), converter.toDomain(CommentSelector.class, request),
         event -> {
           if (event.succeeded()) {
             final List<CommentProto> collect = event.result().body().stream()
@@ -63,17 +67,21 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
    */
   @Override
   public void createComment(final CommentInputProto request, final Promise<CommentReplyProto> response) {
+    final String userId = UserContextInterceptor.USER_CONTEXT.get();
 
-    eventBus.<Comment>request(
-        Address.CREATE_ONE_COMMENT.get(), converter.toDomain(CommentInput.class, request),
-        event -> {
-          if (event.succeeded()) {
-            response.complete(converter
-                .toProtobuf(CommentReplyProto.class, new CommentReply(event.result().body())));
-          } else {
-            response.fail(event.cause());
-          }
-        });
+    if (userId != null) {
+      eventBus.<Comment>request(
+          Address.CREATE_ONE_COMMENT.get(), converter.toDomain(CommentInput.class, request), new DeliveryOptions().addHeader(USER_ID, userId),
+          event -> {
+            if (event.succeeded()) {
+              response.complete(converter.toProtobuf(CommentReplyProto.class, new CommentReply(event.result().body())));
+            } else {
+              response.fail(event.cause());
+            }
+          });
+    } else {
+      response.fail("User has to be authenticated to create a wish");
+    }
   }
 
   /**
@@ -81,6 +89,13 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
    */
   @Override
   public void updateComment(final UpdateCommentInputProto request, final Promise<CommentReplyProto> response) {
+
+    final String userId = UserContextInterceptor.USER_CONTEXT.get();
+
+    // TODO check if user match
+    if (userId == null) {
+      response.fail("User not authorized");
+    }
 
     eventBus.<Optional<Comment>>request(
         Address.UPDATE_ONE_COMMENT.get(), converter.toDomain(UpdateCommentInput.class, request),
@@ -99,8 +114,7 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
    * This method gets invoked when other service (app, microservice) invokes stub.deleteComment(...)
    */
   @Override
-  public void deleteComment(final CommentQueryProto request,
-      final Promise<CommentDeleteReplyProto> response) {
+  public void deleteComment(final CommentQueryProto request, final Promise<CommentDeleteReplyProto> response) {
 
     eventBus.<Boolean>request(
         Address.DELETE_ONE_COMMENT.get(), converter.toDomain(CommentQuery.class, request),

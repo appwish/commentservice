@@ -18,37 +18,37 @@ import net.badata.protobuf.converter.annotation.ProtoField;
 public class CommentInput {
 
   @ProtoField
-  private long parentId;
+  private long itemId;
 
-  @ProtoField(converter = ParentTypeConverter.class)
-  private ParentType parentType;
+  @ProtoField(converter = ItemTypeConverter.class)
+  private ItemType itemType;
 
   @ProtoField
   private String content;
 
-  public CommentInput(long parentId, ParentType parentType, String content) {
-    this.parentId = parentId;
-    this.parentType = parentType;
+  public CommentInput(long itemId, ItemType itemType, String content) {
+    this.itemId = itemId;
+    this.itemType = itemType;
     this.content = content;
   }
 
   public CommentInput() {
   }
 
-  public long getParentId() {
-    return parentId;
+  public long getItemId() {
+    return itemId;
   }
 
-  public void setParentId(long parentId) {
-    this.parentId = parentId;
+  public void setItemId(long itemId) {
+    this.itemId = itemId;
   }
 
-  public ParentType getParentType() {
-    return parentType;
+  public ItemType getItemType() {
+    return itemType;
   }
 
-  public void setParentType(ParentType parentType) {
-    this.parentType = parentType;
+  public void setItemType(ItemType itemType) {
+    this.itemType = itemType;
   }
 
   public String getContent() {
@@ -68,21 +68,21 @@ public class CommentInput {
       return false;
     }
     CommentInput that = (CommentInput) o;
-    return parentId == that.parentId &&
-        parentType.equals(that.parentType) &&
+    return itemId == that.itemId &&
+        itemType.equals(that.itemType) &&
         content.equals(that.content);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(parentId, parentType, content);
+    return Objects.hash(itemId, itemType, content);
   }
 
   @Override
   public String toString() {
     return "CommentInput{" +
-        "parentId=" + parentId +
-        ", parentType=" + parentType +
+        "itemId=" + itemId +
+        ", itemType=" + itemType +
         ", content='" + content + '\'' +
         '}';
   }

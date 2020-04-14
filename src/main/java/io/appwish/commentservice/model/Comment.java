@@ -1,8 +1,8 @@
 package io.appwish.commentservice.model;
 
 import com.google.protobuf.Timestamp;
-import io.appwish.commentservice.model.input.ParentType;
-import io.appwish.commentservice.model.input.ParentTypeConverter;
+import io.appwish.commentservice.model.input.ItemType;
+import io.appwish.commentservice.model.input.ItemTypeConverter;
 import io.appwish.grpc.CommentProto;
 import java.util.Objects;
 import net.badata.protobuf.converter.annotation.ProtoClass;
@@ -22,13 +22,13 @@ public class Comment {
   private long id;
 
   @ProtoField
-  private long userId;
+  private String userId;
 
   @ProtoField
-  private long parentId;
+  private String itemId;
 
-  @ProtoField(converter = ParentTypeConverter.class)
-  private ParentType parentType;
+  @ProtoField(converter = ItemTypeConverter.class)
+  private ItemType itemType;
 
   @ProtoField
   private String content;
@@ -39,13 +39,13 @@ public class Comment {
   @ProtoField
   private Timestamp updatedAt;
 
-  public Comment(long id, long userId, long parentId,
-      ParentType parentType, String content, Timestamp createdAt,
+  public Comment(long id, String userId, String itemId,
+      ItemType itemType, String content, Timestamp createdAt,
       Timestamp updatedAt) {
     this.id = id;
     this.userId = userId;
-    this.parentId = parentId;
-    this.parentType = parentType;
+    this.itemId = itemId;
+    this.itemType = itemType;
     this.content = content;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -62,28 +62,28 @@ public class Comment {
     this.id = id;
   }
 
-  public long getUserId() {
+  public String getUserId() {
     return userId;
   }
 
-  public void setUserId(long userId) {
+  public void setUserId(String userId) {
     this.userId = userId;
   }
 
-  public long getParentId() {
-    return parentId;
+  public String getItemId() {
+    return itemId;
   }
 
-  public void setParentId(long parentId) {
-    this.parentId = parentId;
+  public void setItemId(String itemId) {
+    this.itemId = itemId;
   }
 
-  public ParentType getParentType() {
-    return parentType;
+  public ItemType getItemType() {
+    return itemType;
   }
 
-  public void setParentType(ParentType parentType) {
-    this.parentType = parentType;
+  public void setItemType(ItemType itemType) {
+    this.itemType = itemType;
   }
 
   public String getContent() {
@@ -121,8 +121,8 @@ public class Comment {
     Comment comment = (Comment) o;
     return id == comment.id &&
         userId == comment.userId &&
-        parentId == comment.parentId &&
-        parentType == comment.parentType &&
+        itemId == comment.itemId &&
+        itemType == comment.itemType &&
         content.equals(comment.content) &&
         createdAt.equals(comment.createdAt) &&
         updatedAt.equals(comment.updatedAt);
@@ -130,7 +130,7 @@ public class Comment {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, userId, parentId, parentType, content, createdAt, updatedAt);
+    return Objects.hash(id, userId, itemId, itemType, content, createdAt, updatedAt);
   }
 
   @Override
@@ -138,8 +138,8 @@ public class Comment {
     return "Comment{" +
         "id=" + id +
         ", userId=" + userId +
-        ", parentId=" + parentId +
-        ", parentType=" + parentType +
+        ", parentId=" + itemId +
+        ", parentType=" + itemType +
         ", content='" + content + '\'' +
         ", createdAt=" + createdAt +
         ", updatedAt=" + updatedAt +

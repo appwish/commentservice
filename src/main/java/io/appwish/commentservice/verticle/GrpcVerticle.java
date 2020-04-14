@@ -1,5 +1,7 @@
 package io.appwish.commentservice.verticle;
 
+import io.appwish.commentservice.interceptor.ExceptionDetailsInterceptor;
+import io.appwish.commentservice.interceptor.UserContextInterceptor;
 import io.appwish.commentservice.service.GrpcServiceImpl;
 import io.grpc.BindableService;
 import io.vertx.core.AbstractVerticle;
@@ -32,9 +34,11 @@ public class GrpcVerticle extends AbstractVerticle {
     final Integer appPort = config.getInteger(APP_PORT);
 
     final VertxServer server = VertxServerBuilder
-      .forAddress(vertx, appHost, appPort)
-      .addService(grpcCommentService)
-      .build();
+        .forAddress(vertx, appHost, appPort)
+        .intercept(new UserContextInterceptor())
+        .addService(grpcCommentService)
+        .intercept(new ExceptionDetailsInterceptor())
+        .build();
 
     server.start(asyncResult -> {
       if (asyncResult.succeeded()) {
