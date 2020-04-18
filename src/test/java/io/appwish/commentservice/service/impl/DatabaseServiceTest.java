@@ -200,7 +200,7 @@ class DatabaseServiceTest {
     // given
     final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
     when(commentRepository.updateOne(TestData.UPDATE_COMMENT_INPUT)).thenReturn(Future.succeededFuture(Optional.empty()));
-    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
+    when(commentRepository.isAuthor(new CommentQuery(TestData.UPDATE_COMMENT_INPUT.getId()), "someUser")).thenReturn(Future.succeededFuture(true));
 
     // when
     vertx.eventBus().<Optional<Comment>>request(Address.UPDATE_ONE_COMMENT.get(), TestData.UPDATE_COMMENT_INPUT, options, event -> {
