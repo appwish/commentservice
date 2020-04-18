@@ -10,6 +10,7 @@ import io.appwish.commentservice.eventbus.Address;
 import io.appwish.commentservice.eventbus.EventBusConfigurer;
 import io.appwish.commentservice.model.Comment;
 import io.appwish.commentservice.model.input.UpdateCommentInput;
+import io.appwish.commentservice.model.query.CommentQuery;
 import io.appwish.commentservice.repository.CommentRepository;
 import io.appwish.commentservice.service.DatabaseService;
 import io.appwish.grpc.CommentSelectorProto;
@@ -181,8 +182,7 @@ class DatabaseServiceTest {
     final UpdateCommentInput input = TestData.UPDATE_COMMENT_INPUT;
     final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
     when(commentRepository.updateOne(input)).thenReturn(Future.succeededFuture(Optional.of(TestData.COMMENT_4)));
-    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
-
+    when(commentRepository.isAuthor(new CommentQuery(input.getId()), "someUser")).thenReturn(Future.succeededFuture(true));
 
     // when
     vertx.eventBus().<Optional<Comment>>request(Address.UPDATE_ONE_COMMENT.get(), input, options,event -> {
