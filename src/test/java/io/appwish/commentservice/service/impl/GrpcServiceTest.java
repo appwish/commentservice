@@ -2,7 +2,6 @@ package io.appwish.commentservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.appwish.commentservice.TestData;
@@ -10,16 +9,14 @@ import io.appwish.commentservice.eventbus.Address;
 import io.appwish.commentservice.eventbus.Codec;
 import io.appwish.commentservice.eventbus.EventBusConfigurer;
 import io.appwish.commentservice.model.Comment;
-import io.appwish.commentservice.model.input.UpdateCommentInput;
-import io.appwish.commentservice.model.reply.CommentDeleteReply;
 import io.appwish.commentservice.service.GrpcServiceImpl;
-import io.appwish.grpc.AllCommentQueryProto;
 import io.appwish.grpc.AllCommentReplyProto;
 import io.appwish.grpc.CommentDeleteReplyProto;
 import io.appwish.grpc.CommentInputProto;
 import io.appwish.grpc.CommentQueryProto;
 import io.appwish.grpc.CommentReplyProto;
-import io.appwish.grpc.ParentTypeProto;
+import io.appwish.grpc.CommentSelectorProto;
+import io.appwish.grpc.ItemTypeProto;
 import io.appwish.grpc.UpdateCommentInputProto;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -51,7 +48,7 @@ class GrpcServiceTest {
   void should_return_all_comments(final Vertx vertx, VertxTestContext context) {
     // given
     final Promise<AllCommentReplyProto> promise = Promise.promise();
-    final AllCommentQueryProto query = AllCommentQueryProto.newBuilder().build();
+    final CommentSelectorProto query = CommentSelectorProto.newBuilder().build();
     vertx.eventBus().consumer(Address.FIND_ALL_COMMENTS.get(), event -> {
       event.reply(TestData.COMMENTS, new DeliveryOptions().setCodecName(Codec.COMMENT.getCodecName()));
     });
@@ -74,7 +71,7 @@ class GrpcServiceTest {
   void should_return_error_when_exception_occured_while_getting_all_comments(final Vertx vertx, VertxTestContext context) {
     // given
     final Promise<AllCommentReplyProto> promise = Promise.promise();
-    final AllCommentQueryProto query = AllCommentQueryProto.newBuilder().build();
+    final CommentSelectorProto query = CommentSelectorProto.newBuilder().build();
     vertx.eventBus().consumer(Address.FIND_ALL_COMMENTS.get(), event -> {
       event.fail(0, TestData.ERROR_MESSAGE);
     });
@@ -98,8 +95,8 @@ class GrpcServiceTest {
     final Promise<CommentReplyProto> promise = Promise.promise();
     final CommentInputProto inputProto = CommentInputProto.newBuilder()
         .setContent(TestData.SOME_COMMENT_CONTENT)
-        .setParentId(TestData.SOME_PARENT_ID)
-        .setParentType(ParentTypeProto.WISH)
+        .setItemId(Long.parseLong(TestData.SOME_ITEM_ID))
+        .setItemType(ItemTypeProto.WISH)
         .build();
     vertx.eventBus().consumer(Address.CREATE_ONE_COMMENT.get(), event -> {
       event.reply(TestData.COMMENT_1);
@@ -125,8 +122,8 @@ class GrpcServiceTest {
     final Promise<CommentReplyProto> promise = Promise.promise();
     final CommentInputProto inputProto = CommentInputProto.newBuilder()
         .setContent(TestData.SOME_COMMENT_CONTENT)
-        .setParentId(TestData.SOME_PARENT_ID)
-        .setParentType(ParentTypeProto.WISH)
+        .setItemId(Long.parseLong(TestData.SOME_ITEM_ID))
+        .setItemType(ItemTypeProto.WISH)
         .build();
     vertx.eventBus().consumer(Address.CREATE_ONE_COMMENT.get(), event -> {
       event.fail(0, TestData.ERROR_MESSAGE);
@@ -181,6 +178,7 @@ class GrpcServiceTest {
         .setContent(TestData.COMMENT_3.getContent())
         .setId(TestData.COMMENT_3.getId())
       .build();
+
     vertx.eventBus().consumer(Address.UPDATE_ONE_COMMENT.get(), event -> {
       event.reply(Optional.empty(), new DeliveryOptions().setCodecName(Codec.COMMENT.getCodecName()));
     });

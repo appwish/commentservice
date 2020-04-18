@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.appwish.commentservice.TestData;
 import io.appwish.commentservice.model.Comment;
 import io.appwish.commentservice.model.input.CommentInput;
-import io.appwish.commentservice.model.input.ParentType;
+import io.appwish.commentservice.model.input.ItemType;
 import io.appwish.commentservice.model.input.UpdateCommentInput;
-import io.appwish.commentservice.model.query.AllCommentQuery;
 import io.appwish.commentservice.model.query.CommentQuery;
+import io.appwish.commentservice.model.query.CommentSelector;
 import io.appwish.commentservice.repository.CommentRepository;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -66,19 +66,19 @@ class PostgresCommentRepositoryTest {
   void should_be_able_to_store_comment(final Vertx vertx, final VertxTestContext context) {
     // given
     final CommentInput commentInput = new CommentInput(
-      TestData.SOME_PARENT_ID,
+      Long.parseLong(TestData.SOME_ITEM_ID),
       TestData.SOME_PARENT_TYPE,
       TestData.SOME_COMMENT_CONTENT);
 
     // when
-    repository.addOne(commentInput)
+    repository.addOne(commentInput, TestData.COMMENT_1.getUserId())
       .setHandler(event -> {
 
         // then
         context.verify(() -> {
           assertTrue(event.succeeded());
-          assertEquals(TestData.SOME_PARENT_ID, event.result().getParentId());
-          assertEquals(TestData.SOME_PARENT_TYPE, event.result().getParentType());
+          assertEquals(TestData.SOME_ITEM_ID, event.result().getItemId());
+          assertEquals(TestData.SOME_PARENT_TYPE, event.result().getItemType());
           assertEquals(TestData.SOME_COMMENT_CONTENT, event.result().getContent());
           context.completeNow();
         });
@@ -88,26 +88,26 @@ class PostgresCommentRepositoryTest {
   @Test
   void should_be_able_to_read_multiple_comments(final Vertx vertx, final VertxTestContext context) {
     // given
-    final Future<Comment> addComment1a = repository.addOne(TestData.COMMENT_INPUT_1);
-    final Future<Comment> addComment1b = repository.addOne(TestData.COMMENT_INPUT_1);
-    final Future<Comment> addComment1c = repository.addOne(TestData.COMMENT_INPUT_1);
-    final Future<Comment> addComment2 = repository.addOne(TestData.COMMENT_INPUT_2);
-    final Future<Comment> addComment3 = repository.addOne(TestData.COMMENT_INPUT_3);
-    final Future<Comment> addComment4 = repository.addOne(TestData.COMMENT_INPUT_4);
-    context.assertComplete(CompositeFuture.all(addComment1a, addComment1b, addComment1c, addComment2, addComment3, addComment4))
+    final Future<Comment> addComment1a = repository.addOne(TestData.COMMENT_INPUT_1, TestData.COMMENT_1.getUserId());
+    final Future<Comment> addComment1b = repository.addOne(TestData.COMMENT_INPUT_1, TestData.COMMENT_1.getUserId());
+    final Future<Comment> addComment1c = repository.addOne(TestData.COMMENT_INPUT_1, TestData.COMMENT_1.getUserId());
+    final Future<Comment> addComment2 = repository.addOne(TestData.COMMENT_INPUT_2, TestData.COMMENT_2.getUserId());
+    final Future<Comment> addComment3 = repository.addOne(TestData.COMMENT_INPUT_3, TestData.COMMENT_3.getUserId());
+    final Future<Comment> addComment4 = repository.addOne(TestData.COMMENT_INPUT_4, TestData.COMMENT_4.getUserId());
+
+    context.assertComplete(CompositeFuture.all(List.of(addComment1a, addComment1b, addComment1c, addComment2, addComment3, addComment4)))
       .setHandler(event -> {
 
         // when
-        repository.findAll(new AllCommentQuery(
-            TestData.COMMENT_1.getParentId(),
-            TestData.COMMENT_1.getParentType()
+        repository.findAll(new CommentSelector(
+            TestData.COMMENT_1.getItemId(),
+            TestData.COMMENT_1.getItemType()
         )).setHandler(query -> context.verify(() -> {
 
           // then
           assertTrue(query.succeeded());
           assertEquals(3, query.result().size());
-          // TODO fails because of hardcoded user ID
-//          query.result().forEach(comment -> assertTrue(isInList(comment, TestData.COMMENTS)));
+          query.result().forEach(comment -> assertTrue(isInList(comment, TestData.COMMENTS)));
           context.completeNow();
         }));
       });
@@ -131,7 +131,7 @@ class PostgresCommentRepositoryTest {
   @Test
   void should_be_able_to_delete_existing_comment(final Vertx vertx, final VertxTestContext context) {
     // given
-    context.assertComplete(repository.addOne(TestData.COMMENT_INPUT_1)).setHandler(event -> {
+    context.assertComplete(repository.addOne(TestData.COMMENT_INPUT_1, TestData.COMMENT_1.getUserId())).setHandler(event -> {
       final long id = event.result().getId();
 
       // when
@@ -170,7 +170,7 @@ class PostgresCommentRepositoryTest {
   void  should_update_existing_comment(final Vertx vertx, final VertxTestContext context)
     throws Exception {
     // given
-    context.assertComplete(repository.addOne(TestData.COMMENT_INPUT_1)).setHandler(event -> {
+    context.assertComplete(repository.addOne(TestData.COMMENT_INPUT_1, TestData.COMMENT_1.getUserId())).setHandler(event -> {
       final long id = event.result().getId();
       final UpdateCommentInput updated = new UpdateCommentInput(id, TestData.COMMENT_2.getContent());
 
@@ -182,10 +182,9 @@ class PostgresCommentRepositoryTest {
           assertTrue(query.succeeded());
           assertTrue(query.result().isPresent());
           assertEquals(TestData.COMMENT_2.getContent(), query.result().get().getContent());
-          assertEquals(TestData.COMMENT_1.getParentId(), query.result().get().getParentId());
-          assertEquals(TestData.COMMENT_1.getParentType(), query.result().get().getParentType());
-          // TODO remove hardcoded logic
-          assertEquals(123L, query.result().get().getUserId());
+          assertEquals(TestData.COMMENT_1.getItemId(), query.result().get().getItemId());
+          assertEquals(TestData.COMMENT_1.getItemType(), query.result().get().getItemType());
+          assertEquals(TestData.COMMENT_1.getUserId(), query.result().get().getUserId());
           assertEquals(id, query.result().get().getId());
           context.completeNow();
         });
@@ -206,8 +205,8 @@ class PostgresCommentRepositoryTest {
     postgres.close();
 
     // when
-    final Future<Comment> addComment = repository.addOne(TestData.COMMENT_INPUT_1);
-    final Future<List<Comment>> findAllComments = repository.findAll(new AllCommentQuery(123L, ParentType.COMMENT));
+    final Future<Comment> addComment = repository.addOne(TestData.COMMENT_INPUT_1, TestData.COMMENT_1.getUserId());
+    final Future<List<Comment>> findAllComments = repository.findAll(new CommentSelector("123", ItemType.COMMENT));
     final Future<Optional<Comment>> updateComment = repository.updateOne(updateCommentInput);
 
     // then
@@ -221,6 +220,10 @@ class PostgresCommentRepositoryTest {
   }
 
   private static boolean isInList(final Comment comment, final List<Comment> list) {
-    return list.stream().anyMatch(commentFromList -> commentFromList.equals(comment));
+    return list.stream().anyMatch(commentFromList ->
+        // ignores timestamps and id
+        comment.getContent().equals(commentFromList.getContent()) &&
+        comment.getItemId().equals(commentFromList.getItemId()) &&
+        comment.getItemType().equals(commentFromList.getItemType()));
   }
 }

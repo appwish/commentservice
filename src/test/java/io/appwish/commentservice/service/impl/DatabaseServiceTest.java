@@ -10,11 +10,12 @@ import io.appwish.commentservice.eventbus.Address;
 import io.appwish.commentservice.eventbus.EventBusConfigurer;
 import io.appwish.commentservice.model.Comment;
 import io.appwish.commentservice.model.input.UpdateCommentInput;
-import io.appwish.commentservice.model.query.AllCommentQuery;
 import io.appwish.commentservice.repository.CommentRepository;
 import io.appwish.commentservice.service.DatabaseService;
+import io.appwish.grpc.CommentSelectorProto;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.List;
@@ -42,11 +43,11 @@ class DatabaseServiceTest {
   @Test
   void should_reply_all_comments(final Vertx vertx, final VertxTestContext context) {
     // given
-    when(commentRepository.findAll(TestData.ALL_COMMENT_QUERY))
+    when(commentRepository.findAll(TestData.COMMENT_SELECTOR))
       .thenReturn(Future.succeededFuture(TestData.COMMENTS));
 
     // when
-    vertx.eventBus().<List<Comment>>request(Address.FIND_ALL_COMMENTS.get(), TestData.ALL_COMMENT_QUERY,
+    vertx.eventBus().<List<Comment>>request(Address.FIND_ALL_COMMENTS.get(), TestData.COMMENT_SELECTOR,
       event -> {
 
         // then
@@ -61,11 +62,11 @@ class DatabaseServiceTest {
   void should_return_error_on_error_getting_all_comments(final Vertx vertx,
     final VertxTestContext context) {
     // given
-    when(commentRepository.findAll(TestData.ALL_COMMENT_QUERY))
+    when(commentRepository.findAll(TestData.COMMENT_SELECTOR))
       .thenReturn(Future.failedFuture(new AssertionError()));
 
     // when
-    vertx.eventBus().<AllCommentQuery>request(Address.FIND_ALL_COMMENTS.get(), TestData.ALL_COMMENT_QUERY,
+    vertx.eventBus().<CommentSelectorProto>request(Address.FIND_ALL_COMMENTS.get(), TestData.COMMENT_SELECTOR,
       event -> {
 
         // then
@@ -80,11 +81,11 @@ class DatabaseServiceTest {
   void should_reply_added_comment(final Vertx vertx,
     final VertxTestContext context) {
     // given
-    when(commentRepository.addOne(TestData.COMMENT_INPUT_1))
-      .thenReturn(Future.succeededFuture(TestData.COMMENT_4));
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
+    when(commentRepository.addOne(TestData.COMMENT_INPUT_1,"someUser")).thenReturn(Future.succeededFuture(TestData.COMMENT_4));
 
     // when
-    vertx.eventBus().<Comment>request(Address.CREATE_ONE_COMMENT.get(), TestData.COMMENT_INPUT_1, event -> {
+    vertx.eventBus().<Comment>request(Address.CREATE_ONE_COMMENT.get(), TestData.COMMENT_INPUT_1, options, event -> {
 
       // then
       context.verify(() -> {
@@ -98,11 +99,11 @@ class DatabaseServiceTest {
   void should_return_error_on_error_adding_comment(final Vertx vertx,
     final VertxTestContext context) {
     // given
-    when(commentRepository.addOne(TestData.COMMENT_INPUT_1))
-      .thenReturn(Future.failedFuture(new AssertionError()));
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
+    when(commentRepository.addOne(TestData.COMMENT_INPUT_1, "someUser")).thenReturn(Future.failedFuture(new AssertionError()));
 
     // when
-    vertx.eventBus().<Comment>request(Address.CREATE_ONE_COMMENT.get(), TestData.COMMENT_INPUT_1, event -> {
+    vertx.eventBus().<Comment>request(Address.CREATE_ONE_COMMENT.get(), TestData.COMMENT_INPUT_1, options, event -> {
 
       // then
       context.verify(() -> {
@@ -115,11 +116,13 @@ class DatabaseServiceTest {
   @Test
   void should_return_true_if_deleted_comment(final Vertx vertx, final VertxTestContext context) {
     // given
-    when(commentRepository.deleteOne(TestData.COMMENT_QUERY))
-      .thenReturn(Future.succeededFuture(true));
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
+    when(commentRepository.deleteOne(TestData.COMMENT_QUERY)).thenReturn(Future.succeededFuture(true));
+    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
+
 
     // when
-    vertx.eventBus().<Boolean>request(Address.DELETE_ONE_COMMENT.get(), TestData.COMMENT_QUERY, event -> {
+    vertx.eventBus().<Boolean>request(Address.DELETE_ONE_COMMENT.get(), TestData.COMMENT_QUERY, options, event -> {
 
       // then
       context.verify(() -> {
@@ -133,12 +136,14 @@ class DatabaseServiceTest {
   @Test
   void should_return_false_if_not_deleted_comment(final Vertx vertx, final VertxTestContext context) {
     // given
-    when(commentRepository.deleteOne(TestData.COMMENT_QUERY))
-      .thenReturn(Future.succeededFuture(false));
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
+    when(commentRepository.deleteOne(TestData.COMMENT_QUERY)).thenReturn(Future.succeededFuture(false));
+    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
+
 
     // when
     vertx.eventBus().<Boolean>request(Address.DELETE_ONE_COMMENT.get(),
-      TestData.COMMENT_QUERY, event -> {
+      TestData.COMMENT_QUERY, options, event -> {
 
         // then
         context.verify(() -> {
@@ -153,12 +158,14 @@ class DatabaseServiceTest {
   void should_return_error_on_error_deleting_comment(final Vertx vertx,
     final VertxTestContext context) {
     // given
-    when(commentRepository.deleteOne(TestData.COMMENT_QUERY))
-      .thenReturn(Future.failedFuture(new AssertionError()));
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
+    when(commentRepository.deleteOne(TestData.COMMENT_QUERY)).thenReturn(Future.failedFuture(new AssertionError()));
+    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
+
 
     // when
     vertx.eventBus().<Boolean>request(Address.DELETE_ONE_COMMENT.get(),
-      TestData.COMMENT_QUERY, event -> {
+      TestData.COMMENT_QUERY, options, event -> {
 
         // then
         context.verify(() -> {
@@ -172,11 +179,13 @@ class DatabaseServiceTest {
   void should_return_updated_comment(final Vertx vertx, final VertxTestContext context) {
     // given
     final UpdateCommentInput input = TestData.UPDATE_COMMENT_INPUT;
-    when(commentRepository.updateOne(input))
-      .thenReturn(Future.succeededFuture(Optional.of(TestData.COMMENT_4)));
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
+    when(commentRepository.updateOne(input)).thenReturn(Future.succeededFuture(Optional.of(TestData.COMMENT_4)));
+    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
+
 
     // when
-    vertx.eventBus().<Optional<Comment>>request(Address.UPDATE_ONE_COMMENT.get(), input, event -> {
+    vertx.eventBus().<Optional<Comment>>request(Address.UPDATE_ONE_COMMENT.get(), input, options,event -> {
 
       // then
       context.verify(() -> {
@@ -189,10 +198,12 @@ class DatabaseServiceTest {
   @Test
   void should_return_empty_if_not_updated(final Vertx vertx, final VertxTestContext context) {
     // given
+    final DeliveryOptions options = new DeliveryOptions().addHeader("userId", "someUser");
     when(commentRepository.updateOne(TestData.UPDATE_COMMENT_INPUT)).thenReturn(Future.succeededFuture(Optional.empty()));
+    when(commentRepository.isAuthor(TestData.COMMENT_QUERY, "someUser")).thenReturn(Future.succeededFuture(true));
 
     // when
-    vertx.eventBus().<Optional<Comment>>request(Address.UPDATE_ONE_COMMENT.get(), TestData.UPDATE_COMMENT_INPUT, event -> {
+    vertx.eventBus().<Optional<Comment>>request(Address.UPDATE_ONE_COMMENT.get(), TestData.UPDATE_COMMENT_INPUT, options, event -> {
 
       // then
       context.verify(() -> {

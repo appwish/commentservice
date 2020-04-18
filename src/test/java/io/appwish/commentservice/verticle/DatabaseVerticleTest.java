@@ -26,15 +26,14 @@ class DatabaseVerticleTest {
     final CommentRepository repository = mock(CommentRepository.class);
     final DatabaseVerticle verticle = new DatabaseVerticle(repository);
     final EventBusConfigurer util = new EventBusConfigurer(vertx.eventBus());
-    when(repository.findAll(TestData.ALL_COMMENT_QUERY))
-      .thenReturn(Future.succeededFuture(TestData.COMMENTS));
+    when(repository.findAll(TestData.COMMENT_SELECTOR)).thenReturn(Future.succeededFuture(TestData.COMMENTS));
 
     util.registerCodecs();
 
     // when
     vertx.deployVerticle(verticle, new DeploymentOptions(), context.succeeding());
 
-    vertx.eventBus().request(Address.FIND_ALL_COMMENTS.get(), TestData.ALL_COMMENT_QUERY, event -> {
+    vertx.eventBus().request(Address.FIND_ALL_COMMENTS.get(), TestData.COMMENT_SELECTOR, event -> {
       // then
       context.verify(() -> {
         assertTrue(event.succeeded());

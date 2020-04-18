@@ -111,6 +111,19 @@ public class Comment {
   }
 
   @Override
+  public String toString() {
+    return "Comment{" +
+        "id=" + id +
+        ", userId='" + userId + '\'' +
+        ", itemId='" + itemId + '\'' +
+        ", itemType=" + itemType +
+        ", content='" + content + '\'' +
+        ", createdAt=" + createdAt +
+        ", updatedAt=" + updatedAt +
+        '}';
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -120,8 +133,8 @@ public class Comment {
     }
     Comment comment = (Comment) o;
     return id == comment.id &&
-        userId == comment.userId &&
-        itemId == comment.itemId &&
+        userId.equals(comment.userId) &&
+        itemId.equals(comment.itemId) &&
         itemType == comment.itemType &&
         content.equals(comment.content) &&
         createdAt.equals(comment.createdAt) &&
@@ -131,18 +144,5 @@ public class Comment {
   @Override
   public int hashCode() {
     return Objects.hash(id, userId, itemId, itemType, content, createdAt, updatedAt);
-  }
-
-  @Override
-  public String toString() {
-    return "Comment{" +
-        "id=" + id +
-        ", userId=" + userId +
-        ", parentId=" + itemId +
-        ", parentType=" + itemType +
-        ", content='" + content + '\'' +
-        ", createdAt=" + createdAt +
-        ", updatedAt=" + updatedAt +
-        '}';
   }
 }

@@ -1,5 +1,7 @@
 package io.appwish.commentservice.service;
 
+import static java.util.Objects.isNull;
+
 import io.appwish.commentservice.eventbus.Address;
 import io.appwish.commentservice.interceptor.UserContextInterceptor;
 import io.appwish.commentservice.model.Comment;
@@ -68,10 +70,10 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
   @Override
   public void createComment(final CommentInputProto request, final Promise<CommentReplyProto> response) {
     final String userId = UserContextInterceptor.USER_CONTEXT.get();
+    final DeliveryOptions options = isNull(userId) ? new DeliveryOptions() : new DeliveryOptions().addHeader(USER_ID, userId);
 
-    if (userId != null) {
       eventBus.<Comment>request(
-          Address.CREATE_ONE_COMMENT.get(), converter.toDomain(CommentInput.class, request), new DeliveryOptions().addHeader(USER_ID, userId),
+          Address.CREATE_ONE_COMMENT.get(), converter.toDomain(CommentInput.class, request), options,
           event -> {
             if (event.succeeded()) {
               response.complete(converter.toProtobuf(CommentReplyProto.class, new CommentReply(event.result().body())));
@@ -79,9 +81,6 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
               response.fail(event.cause());
             }
           });
-    } else {
-      response.fail("User has to be authenticated to create a wish");
-    }
   }
 
   /**
@@ -91,14 +90,10 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
   public void updateComment(final UpdateCommentInputProto request, final Promise<CommentReplyProto> response) {
 
     final String userId = UserContextInterceptor.USER_CONTEXT.get();
-
-    // TODO check if user match
-    if (userId == null) {
-      response.fail("User not authorized");
-    }
+    final DeliveryOptions options = isNull(userId) ? new DeliveryOptions() : new DeliveryOptions().addHeader(USER_ID, userId);
 
     eventBus.<Optional<Comment>>request(
-        Address.UPDATE_ONE_COMMENT.get(), converter.toDomain(UpdateCommentInput.class, request),
+        Address.UPDATE_ONE_COMMENT.get(), converter.toDomain(UpdateCommentInput.class, request), options,
         event -> {
           if (event.succeeded() && event.result().body().isPresent()) {
             response.complete(converter.toProtobuf(CommentReplyProto.class, new CommentReply(event.result().body().get())));
@@ -115,9 +110,11 @@ public class GrpcServiceImpl extends CommentServiceGrpc.CommentServiceVertxImplB
    */
   @Override
   public void deleteComment(final CommentQueryProto request, final Promise<CommentDeleteReplyProto> response) {
+    final String userId = UserContextInterceptor.USER_CONTEXT.get();
+    final DeliveryOptions options = isNull(userId) ? new DeliveryOptions() : new DeliveryOptions().addHeader(USER_ID, userId);
 
     eventBus.<Boolean>request(
-        Address.DELETE_ONE_COMMENT.get(), converter.toDomain(CommentQuery.class, request),
+        Address.DELETE_ONE_COMMENT.get(), converter.toDomain(CommentQuery.class, request), options,
         event -> {
           if (event.succeeded()) {
             response.complete(converter.toProtobuf(CommentDeleteReplyProto.class,

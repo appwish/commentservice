@@ -1,5 +1,7 @@
 package io.appwish.commentservice.service;
 
+import static java.util.Objects.isNull;
+
 import io.appwish.commentservice.eventbus.Address;
 import io.appwish.commentservice.eventbus.Codec;
 import io.appwish.commentservice.model.Comment;
@@ -21,6 +23,8 @@ import java.util.Optional;
  */
 public class DatabaseService {
 
+  private static final String USER_ID = "userId";
+
   private final EventBus eventBus;
   private final CommentRepository commentRepository;
 
@@ -34,10 +38,34 @@ public class DatabaseService {
         .handler(event -> commentRepository.findAll(event.body()).setHandler(findAllHandler(event)));
 
     eventBus.<CommentInput>consumer(Address.CREATE_ONE_COMMENT.get())
-        .handler(event -> commentRepository.addOne(event.body(), event.headers().get("userId")).setHandler(addOneHandler(event)));
+        .handler(event -> {
+          final String userId = event.headers().get(USER_ID);
+
+          if (isNull(userId)) {
+            event.fail(1, "Only authenticated users can add comments.");
+            return;
+          }
+
+          commentRepository.addOne(event.body(), userId).setHandler(addOneHandler(event));
+        });
 
     eventBus.<UpdateCommentInput>consumer(Address.UPDATE_ONE_COMMENT.get())
-        .handler(event -> commentRepository.updateOne(event.body()).setHandler(updateOneHandler(event)));
+        .handler(event -> {
+          final String userId = event.headers().get(USER_ID);
+
+          if (isNull(userId)) {
+            event.fail(1, "Only authenticated users can update comments.");
+            return;
+          }
+
+          commentRepository.isAuthor(new CommentQuery(event.body().getId()), userId)
+              .onSuccess(isAuthor -> {
+                if (isAuthor) {
+                  commentRepository.updateOne(event.body()).setHandler(updateOneHandler(event));
+                }
+              })
+              .onFailure(failure -> event.fail(1, failure.getMessage()));
+        });
 
     eventBus.<CommentQuery>consumer(Address.DELETE_ONE_COMMENT.get())
         .handler(event -> commentRepository.isAuthor(event.body(), event.headers().get("userId")).onComplete(deleted -> {
